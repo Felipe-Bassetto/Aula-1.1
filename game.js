@@ -37,7 +37,7 @@ class Game {
             active: false,
             startPoint: null,
             currentPoint: null,
-            maxForce: 0.15,
+            maxForce: 0.1,
             projectile: null
         };
 
@@ -124,7 +124,7 @@ class Game {
                     label: 'character',
                     render: { fillStyle: player.color },
                     playerIndex: i,
-                    hp: 100
+                    hp: 50
                 });
 
                 player.characters.push(char);
@@ -189,7 +189,7 @@ class Game {
 
         const force = Vector.sub(this.sling.startPoint, this.sling.currentPoint);
         const magnitude = Vector.magnitude(force);
-        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.001, this.sling.maxForce));
+        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.0006, this.sling.maxForce));
 
         this.fireProjectile(this.sling.activeChar.position, normalizedForce);
 
@@ -327,7 +327,7 @@ class Game {
 
         this.gameState.players.forEach(p => {
             const totalHP = p.characters.reduce((acc, c) => acc + Math.max(0, c.hp), 0);
-            const maxHP = this.config.charsPerPlayer * 100;
+            const maxHP = this.config.charsPerPlayer * 50;
             const percentage = (totalHP / maxHP) * 100;
 
             const row = document.createElement('div');
