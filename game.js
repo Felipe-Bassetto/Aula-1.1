@@ -37,7 +37,7 @@ class Game {
             active: false,
             startPoint: null,
             currentPoint: null,
-            maxForce: 0.08,
+            maxForce: 0.04,
             projectile: null
         };
 
@@ -189,7 +189,7 @@ class Game {
 
         const force = Vector.sub(this.sling.startPoint, this.sling.currentPoint);
         const magnitude = Vector.magnitude(force);
-        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.0004, this.sling.maxForce));
+        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.0002, this.sling.maxForce));
 
         this.fireProjectile(this.sling.activeChar.position, normalizedForce);
 
