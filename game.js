@@ -11,14 +11,15 @@ class Game {
         this.engine = Engine.create();
         this.world = this.engine.world;
         this.runner = Runner.create();
-        
+
         this.gameState = {
             players: [],
             currentPlayerIndex: 0,
             timer: 30,
             gameActive: false,
             winner: null,
-            characters: [] // All character bodies
+            characters: [], // All character bodies
+            hasShot: false
         };
 
         this.playerColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b'];
@@ -46,7 +47,7 @@ class Game {
 
     initPhysics() {
         this.world.gravity.y = this.config.gravity;
-        
+
         // Setup renderer for debugging or custom loop
         this.render = Render.create({
             canvas: this.canvas,
@@ -91,10 +92,10 @@ class Game {
     startGame() {
         this.config.playerCount = parseInt(document.getElementById('player-count').value);
         this.config.charsPerPlayer = parseInt(document.getElementById('char-count').value);
-        
+
         document.getElementById('main-menu').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
-        
+
         this.setupPlayers();
         this.generateTerrain();
         this.gameState.gameActive = true;
@@ -125,7 +126,7 @@ class Game {
                     playerIndex: i,
                     hp: 100
                 });
-                
+
                 player.characters.push(char);
                 this.gameState.characters.push(char);
                 World.add(this.world, char);
@@ -138,14 +139,14 @@ class Game {
         const width = window.innerWidth;
         const height = window.innerHeight;
         const blockSize = 30;
-        
+
         // Create a simple hilly terrain with blocks
         for (let x = 0; x < width; x += blockSize) {
             const hillHeight = Math.sin(x * 0.005) * 50 + 100;
             const targetY = height - hillHeight;
-            
+
             for (let y = targetY; y < height; y += blockSize) {
-                const block = Bodies.rectangle(x + blockSize/2, y + blockSize/2, blockSize, blockSize, {
+                const block = Bodies.rectangle(x + blockSize / 2, y + blockSize / 2, blockSize, blockSize, {
                     isStatic: true,
                     label: 'terrain',
                     render: { fillStyle: '#334155' }
@@ -156,8 +157,8 @@ class Game {
     }
 
     handleMouseDown(e) {
-        if (!this.gameState.gameActive || this.sling.active) return;
-        
+        if (!this.gameState.gameActive || this.sling.active || this.gameState.hasShot) return;
+
         const currentPlayer = this.gameState.players[this.gameState.currentPlayerIndex];
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -207,9 +208,11 @@ class Game {
             playerIndex: player.id
         });
 
+        this.gameState.hasShot = true;
+
         Body.applyForce(projectile, projectile.position, force);
         World.add(this.world, projectile);
-        
+
         // Auto-next turn after projectile stops or leaves
         setTimeout(() => this.checkProjectileStatus(projectile), 2000);
     }
@@ -244,7 +247,7 @@ class Game {
         const bodies = Composite.allBodies(this.world);
         bodies.forEach(body => {
             const dist = Vector.magnitude(Vector.sub(body.position, pos));
-            
+
             if (dist < this.config.explosionRadius) {
                 if (body.label === 'terrain') {
                     World.remove(this.world, body);
@@ -253,7 +256,7 @@ class Game {
                     const forceDir = Vector.normalise(Vector.sub(body.position, pos));
                     const forceMag = (1 - (dist / this.config.explosionRadius)) * this.config.explosionForce;
                     Body.applyForce(body, body.position, Vector.mult(forceDir, forceMag));
-                    
+
                     // Damage
                     body.hp -= Math.floor((1 - (dist / this.config.explosionRadius)) * 50);
                     if (body.hp <= 0) {
@@ -285,9 +288,9 @@ class Game {
 
     nextTurn() {
         if (!this.gameState.gameActive) return;
-        
+
         this.gameState.currentPlayerIndex = (this.gameState.currentPlayerIndex + 1) % this.gameState.players.length;
-        
+
         // Skip players with no characters
         if (this.gameState.players[this.gameState.currentPlayerIndex].characters.length === 0) {
             this.nextTurn();
@@ -295,6 +298,7 @@ class Game {
         }
 
         this.gameState.timer = 30;
+        this.gameState.hasShot = false;
         this.updateHUD();
     }
 
@@ -320,12 +324,12 @@ class Game {
     updateStats() {
         const statsContainer = document.querySelector('.game-stats');
         statsContainer.innerHTML = '';
-        
+
         this.gameState.players.forEach(p => {
             const totalHP = p.characters.reduce((acc, c) => acc + Math.max(0, c.hp), 0);
             const maxHP = this.config.charsPerPlayer * 100;
             const percentage = (totalHP / maxHP) * 100;
-            
+
             const row = document.createElement('div');
             row.className = 'player-stat-row';
             row.innerHTML = `
@@ -346,7 +350,7 @@ class Game {
     // Custom loop for drawing the sling line
     draw() {
         const ctx = this.canvas.getContext('2d');
-        
+
         // This is called inside a requestAnimationFrame or similar if we weren't using Render.run
         // But since we are, we can also use Events.on(render, 'afterRender', ...)
     }
@@ -355,7 +359,7 @@ class Game {
 // Initialize when everything is loaded
 window.addEventListener('load', () => {
     const game = new Game();
-    
+
     // Sling drawing logic on top of Matter.js renderer
     Events.on(game.render, 'afterRender', () => {
         const ctx = game.canvas.getContext('2d');
@@ -368,14 +372,14 @@ window.addEventListener('load', () => {
             ctx.setLineDash([5, 5]);
             ctx.stroke();
             ctx.setLineDash([]);
-            
+
             // Draw force indicator (arrow head or circle)
             ctx.beginPath();
             ctx.arc(game.sling.startPoint.x, game.sling.startPoint.y, 5, 0, Math.PI * 2);
             ctx.fillStyle = 'white';
             ctx.fill();
         }
-        
+
         // Check for out of bounds characters (falling off)
         game.gameState.characters.forEach(char => {
             if (char.position.y > window.innerHeight) {
