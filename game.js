@@ -37,7 +37,7 @@ class Game {
             active: false,
             startPoint: null,
             currentPoint: null,
-            maxForce: 0.1,
+            maxForce: 0.08,
             projectile: null
         };
 
@@ -189,7 +189,7 @@ class Game {
 
         const force = Vector.sub(this.sling.startPoint, this.sling.currentPoint);
         const magnitude = Vector.magnitude(force);
-        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.0006, this.sling.maxForce));
+        const normalizedForce = Vector.mult(Vector.normalise(force), Math.min(magnitude * 0.0004, this.sling.maxForce));
 
         this.fireProjectile(this.sling.activeChar.position, normalizedForce);
 
@@ -202,7 +202,8 @@ class Game {
         const player = this.gameState.players[this.gameState.currentPlayerIndex];
         const projectile = Bodies.circle(pos.x, pos.y - 20, 8, {
             friction: 0.1,
-            restitution: 0.5,
+            restitution: 0.4,
+            frictionAir: 0.02,
             label: 'projectile',
             render: { fillStyle: player.color },
             playerIndex: player.id
@@ -213,8 +214,8 @@ class Game {
         Body.applyForce(projectile, projectile.position, force);
         World.add(this.world, projectile);
 
-        // Auto-next turn after projectile stops or leaves
-        setTimeout(() => this.checkProjectileStatus(projectile), 2000);
+        // Auto-next turn after projectile stops or leaves (reduced delay)
+        setTimeout(() => this.checkProjectileStatus(projectile), 1000);
     }
 
     checkProjectileStatus(projectile) {
@@ -223,12 +224,12 @@ class Game {
             const speed = Vector.magnitude(projectile.velocity);
             const isOutside = projectile.position.y > window.innerHeight + 100 || projectile.position.x < -100 || projectile.position.x > window.innerWidth + 100;
 
-            if (speed < 0.2 || isOutside) {
+            if (speed < 0.15 || isOutside) {
                 clearInterval(check);
                 World.remove(this.world, projectile);
                 this.nextTurn();
             }
-        }, 500);
+        }, 200);
     }
 
     handleCollision(bodyA, bodyB) {
