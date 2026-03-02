@@ -214,11 +214,14 @@ class Game {
         Body.applyForce(projectile, projectile.position, force);
         World.add(this.world, projectile);
 
-        // Auto-next turn after projectile stops or leaves (reduced delay)
-        setTimeout(() => this.checkProjectileStatus(projectile), 1000);
+        // Pass the turn immediately
+        this.nextTurn();
+
+        // Auto-cleanup projectile without affecting turn flow
+        setTimeout(() => this.cleanupProjectile(projectile), 1000);
     }
 
-    checkProjectileStatus(projectile) {
+    cleanupProjectile(projectile) {
         // Simple logic: if moving slowly or outside, remove and next turn
         const check = setInterval(() => {
             const speed = Vector.magnitude(projectile.velocity);
@@ -227,7 +230,6 @@ class Game {
             if (speed < 0.15 || isOutside) {
                 clearInterval(check);
                 World.remove(this.world, projectile);
-                this.nextTurn();
             }
         }, 200);
     }
