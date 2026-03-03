@@ -37,7 +37,7 @@ class Game {
             active: false,
             startPoint: null,
             currentPoint: null,
-            maxForce: 0.06,
+            maxForce: 0.08,
             projectile: null
         };
 
