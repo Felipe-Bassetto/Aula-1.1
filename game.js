@@ -19,7 +19,8 @@ class Game {
             gameActive: false,
             winner: null,
             characters: [], // All character bodies
-            hasShot: false
+            hasShot: false,
+            shotCounter: 0
         };
 
         this.playerColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b'];
@@ -37,7 +38,7 @@ class Game {
             active: false,
             startPoint: null,
             currentPoint: null,
-            maxForce: 0.04,
+            maxForce: 0.03,
             projectile: null
         };
 
@@ -190,33 +191,28 @@ class Game {
         const density = 0.001;
         const mass = Math.PI * radius * radius * density;
 
-        // Initial velocity (simulating what setVelocity will use)
-        // Matter.js velocity scale per frame (16.666ms)
         let vx = (normalizedForce.x / mass) * 16.666;
         let vy = (normalizedForce.y / mass) * 16.666;
 
         const points = [];
         let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 20 };
 
-        const gravityY = this.world.gravity.y * this.world.gravity.scale * 16.666;
-        const frictionAir = 0.02;
+        const isSpecialShot = (this.gameState.shotCounter + 1) % 3 === 0;
+        const gravityY = isSpecialShot ? 0 : this.world.gravity.y * this.world.gravity.scale * 16.666;
+        const frictionAir = isSpecialShot ? 0 : 0.02;
 
         for (let i = 0; i < 120; i++) {
-            // Apply drag first (Matter.js style)
             vx *= (1 - frictionAir);
             vy *= (1 - frictionAir);
-
-            // Apply gravity
             vy += gravityY;
 
-            // Move
             currPos.x += vx;
             currPos.y += vy;
 
             if (i % 4 === 0) {
                 points.push({ x: currPos.x, y: currPos.y });
             }
-            if (currPos.y > window.innerHeight) break;
+            if (currPos.y > window.innerHeight || currPos.x < -100 || currPos.x > window.innerWidth + 100) break;
         }
         return points;
     }
@@ -242,15 +238,26 @@ class Game {
     }
 
     fireProjectile(pos, force) {
+        this.gameState.shotCounter++;
+        const isSpecialShot = this.gameState.shotCounter % 3 === 0;
+
         const player = this.gameState.players[this.gameState.currentPlayerIndex];
         const projectile = Bodies.circle(pos.x, pos.y - 20, 8, {
             friction: 0.1,
             restitution: 0.4,
-            frictionAir: 0.02,
+            frictionAir: isSpecialShot ? 0 : 0.02,
             label: 'projectile',
-            render: { fillStyle: player.color },
+            render: {
+                fillStyle: isSpecialShot ? '#fff' : player.color, // Special shot is white
+                strokeWeight: isSpecialShot ? 4 : 0,
+                strokeStyle: player.color
+            },
             playerIndex: player.id
         });
+
+        if (isSpecialShot) {
+            projectile.gravityScale = 0;
+        }
 
         this.gameState.hasShot = true;
 
@@ -427,13 +434,15 @@ window.addEventListener('load', () => {
 
             // Draw trajectory dots
             const trajectory = game.calculateTrajectory();
+            const isSpecialShot = (game.gameState.shotCounter + 1) % 3 === 0;
+
             if (trajectory.length > 0) {
-                ctx.fillStyle = game.gameState.players[game.gameState.currentPlayerIndex].color;
+                ctx.fillStyle = isSpecialShot ? '#fff' : game.gameState.players[game.gameState.currentPlayerIndex].color;
                 trajectory.forEach((point, index) => {
                     const alpha = 1 - (index / trajectory.length);
                     ctx.globalAlpha = alpha;
                     ctx.beginPath();
-                    ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+                    ctx.arc(point.x, point.y, isSpecialShot ? 4 : 3, 0, Math.PI * 2);
                     ctx.fill();
                 });
                 ctx.globalAlpha = 1.0;
