@@ -26,7 +26,7 @@ class Game {
         this.config = {
             playerCount: 2,
             charsPerPlayer: 2,
-            gravity: 0.9,
+            gravity: 0.5,
             terrainResolution: 40,
             groundY: 0,
             explosionRadius: 80,
