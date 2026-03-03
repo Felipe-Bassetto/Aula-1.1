@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div id="game-container">
         <!-- Main Menu -->
@@ -17,7 +19,7 @@
             <div class="content">
                 <h1>GRAVITY <span class="accent">SIEGE</span></h1>
                 <p>Destrua seus oponentes com precisão e gravidade.</p>
-                
+
                 <div class="settings">
                     <div class="setting-group">
                         <label for="player-count">Jogadores (2-4):</label>
@@ -28,7 +30,7 @@
                         <input type="number" id="char-count" min="1" max="4" value="2">
                     </div>
                 </div>
-                
+
                 <button id="start-btn" class="primary-btn">INICIAR BATALHA</button>
             </div>
         </div>
@@ -62,6 +64,7 @@
 
     <!-- Matter.js Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <script src="game.js" type="module"></script>
+    <script src="game.js"></script>
 </body>
+
 </html>
