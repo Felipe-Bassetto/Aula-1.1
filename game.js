@@ -188,28 +188,42 @@ class Game {
 
         const points = [];
         const radius = 8;
-        const density = 0.001;
+        const density = 0.001; // Matter.js default density
         const mass = Math.PI * radius * radius * density;
 
-        const dt = 16.666;
+        // Matter.js sequence:
+        // 1. applyForce increases body.force
+        // 2. update velocity: velocity += force / mass (times delta/correction)
+        // 3. apply gravity: velocity.y += gravity.y * 0.001
+        // 4. apply air friction: velocity *= (1 - frictionAir)
+        // 5. update position: position += velocity
+
         let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 20 };
+
+        // Initial integration step (impulse)
+        // Matter.js usually treats force as persistent, but since we apply it once before shooting:
         let vx = (normalizedForce.x / mass);
         let vy = (normalizedForce.y / mass);
 
-        const gravity = (this.config.gravity || 0.9) * 0.001;
+        const gravityY = (this.world.gravity.y * (this.world.gravity.scale || 0.001));
         const frictionAir = 0.02;
 
-        for (let i = 0; i < 90; i++) {
-            vy += gravity;
+        for (let i = 0; i < 120; i++) {
+            // Sequence matching Matter.js Engine.update
+            vy += gravityY;
+
             vx *= (1 - frictionAir);
             vy *= (1 - frictionAir);
-            currPos.x += vx * dt;
-            currPos.y += vy * dt;
 
-            if (i % 3 === 0) {
+            currPos.x += vx;
+            currPos.y += vy;
+
+            if (i % 4 === 0) {
                 points.push({ x: currPos.x, y: currPos.y });
             }
-            if (currPos.y > window.innerHeight + 100 || currPos.x < -100 || currPos.x > window.innerWidth + 100) break;
+
+            // Ground collision check (estimation)
+            if (currPos.y > window.innerHeight) break;
         }
         return points;
     }
