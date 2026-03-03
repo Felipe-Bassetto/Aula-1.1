@@ -194,7 +194,7 @@ class Game {
         let vy = (normalizedForce.y / mass) * 16.666;
 
         const points = [];
-        let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 20 };
+        let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 35 };
 
         const gravityY = this.world.gravity.y * this.world.gravity.scale * 16.666;
         const frictionAir = 0.02;
@@ -237,7 +237,7 @@ class Game {
 
     fireProjectile(pos, force) {
         const player = this.gameState.players[this.gameState.currentPlayerIndex];
-        const projectile = Bodies.circle(pos.x, pos.y - 20, 8, {
+        const projectile = Bodies.circle(pos.x, pos.y - 35, 8, {
             friction: 0.1,
             restitution: 0.4,
             frictionAir: 0.02,
