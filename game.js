@@ -186,43 +186,36 @@ class Game {
         const limitedMagnitude = Math.min(magnitude * 0.0002, this.sling.maxForce);
         const normalizedForce = Vector.mult(Vector.normalise(force), limitedMagnitude);
 
-        const points = [];
         const radius = 8;
-        const density = 0.001; // Matter.js default density
+        const density = 0.001;
         const mass = Math.PI * radius * radius * density;
 
-        // Matter.js sequence:
-        // 1. applyForce increases body.force
-        // 2. update velocity: velocity += force / mass (times delta/correction)
-        // 3. apply gravity: velocity.y += gravity.y * 0.001
-        // 4. apply air friction: velocity *= (1 - frictionAir)
-        // 5. update position: position += velocity
+        // Initial velocity (simulating what setVelocity will use)
+        // Matter.js velocity scale per frame (16.666ms)
+        let vx = (normalizedForce.x / mass) * 16.666;
+        let vy = (normalizedForce.y / mass) * 16.666;
 
+        const points = [];
         let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 20 };
 
-        // Initial integration step (impulse)
-        // Matter.js usually treats force as persistent, but since we apply it once before shooting:
-        let vx = (normalizedForce.x / mass);
-        let vy = (normalizedForce.y / mass);
-
-        const gravityY = (this.world.gravity.y * (this.world.gravity.scale || 0.001));
+        const gravityY = this.world.gravity.y * this.world.gravity.scale * 16.666;
         const frictionAir = 0.02;
 
         for (let i = 0; i < 120; i++) {
-            // Sequence matching Matter.js Engine.update
-            vy += gravityY;
-
+            // Apply drag first (Matter.js style)
             vx *= (1 - frictionAir);
             vy *= (1 - frictionAir);
 
+            // Apply gravity
+            vy += gravityY;
+
+            // Move
             currPos.x += vx;
             currPos.y += vy;
 
             if (i % 4 === 0) {
                 points.push({ x: currPos.x, y: currPos.y });
             }
-
-            // Ground collision check (estimation)
             if (currPos.y > window.innerHeight) break;
         }
         return points;
@@ -261,8 +254,13 @@ class Game {
 
         this.gameState.hasShot = true;
 
-        Body.applyForce(projectile, projectile.position, force);
+        const initialVelocity = {
+            x: (force.x / projectile.mass) * 16.666,
+            y: (force.y / projectile.mass) * 16.666
+        };
+
         World.add(this.world, projectile);
+        Body.setVelocity(projectile, initialVelocity);
 
         // Pass the turn immediately
         this.nextTurn();
