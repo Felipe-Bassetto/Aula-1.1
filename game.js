@@ -178,6 +178,42 @@ class Game {
         }
     }
 
+    calculateTrajectory() {
+        if (!this.sling.active) return [];
+
+        const force = Vector.sub(this.sling.startPoint, this.sling.currentPoint);
+        const magnitude = Vector.magnitude(force);
+        const limitedMagnitude = Math.min(magnitude * 0.0002, this.sling.maxForce);
+        const normalizedForce = Vector.mult(Vector.normalise(force), limitedMagnitude);
+
+        const points = [];
+        const radius = 8;
+        const density = 0.001;
+        const mass = Math.PI * radius * radius * density;
+
+        const dt = 16.666;
+        let currPos = { x: this.sling.activeChar.position.x, y: this.sling.activeChar.position.y - 20 };
+        let vx = (normalizedForce.x / mass);
+        let vy = (normalizedForce.y / mass);
+
+        const gravity = (this.config.gravity || 0.9) * 0.001;
+        const frictionAir = 0.02;
+
+        for (let i = 0; i < 90; i++) {
+            vy += gravity;
+            vx *= (1 - frictionAir);
+            vy *= (1 - frictionAir);
+            currPos.x += vx * dt;
+            currPos.y += vy * dt;
+
+            if (i % 3 === 0) {
+                points.push({ x: currPos.x, y: currPos.y });
+            }
+            if (currPos.y > window.innerHeight + 100 || currPos.x < -100 || currPos.x > window.innerWidth + 100) break;
+        }
+        return points;
+    }
+
     handleMouseMove(e) {
         if (!this.sling.active) return;
         const rect = this.canvas.getBoundingClientRect();
@@ -367,16 +403,31 @@ window.addEventListener('load', () => {
     Events.on(game.render, 'afterRender', () => {
         const ctx = game.canvas.getContext('2d');
         if (game.sling.active) {
+            // Draw sling line
             ctx.beginPath();
             ctx.moveTo(game.sling.startPoint.x, game.sling.startPoint.y);
             ctx.lineTo(game.sling.currentPoint.x, game.sling.currentPoint.y);
             ctx.strokeStyle = game.gameState.players[game.gameState.currentPlayerIndex].color;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Draw force indicator (arrow head or circle)
+            // Draw trajectory dots
+            const trajectory = game.calculateTrajectory();
+            if (trajectory.length > 0) {
+                ctx.fillStyle = game.gameState.players[game.gameState.currentPlayerIndex].color;
+                trajectory.forEach((point, index) => {
+                    const alpha = 1 - (index / trajectory.length);
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1.0;
+            }
+
+            // Draw start indicator (circle)
             ctx.beginPath();
             ctx.arc(game.sling.startPoint.x, game.sling.startPoint.y, 5, 0, Math.PI * 2);
             ctx.fillStyle = 'white';
